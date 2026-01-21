@@ -1,0 +1,532 @@
+IV.1.4 Step 3 (θ-Neighborhood Signature: C_U, Aκ, Cκ, S_θ)
+This section uses the stability of labor market tightness and cost-push coefficients to perform an auxiliary check on consistency with the θ neighborhood. The definition of Sθ is aligned with Part III and fixed to include Aκ (to eliminate definition inconsistencies).
+C_U (Tightness)
+Uses the unemployment rate U_t and a natural unemployment rate proxy (U_natural)
+Determination: If U_t ≤ U_natural + δ, then C_U(t)=1
+$$
+\begin{equation} C_U(t)\equiv 1\left[U_t \le U_{\mathrm{natural},t}+\delta\right]. \end{equation}
+$$
+
+A_κ (Applicability of κ estimation)
+Determined by whether sufficient volatility exists in the inflation rate π and wage growth rate Δw (e.g., within-window variance, range)
+Determination: If both series meet the minimum volatility threshold, Aκ(t)=1; otherwise, Aκ(t)=0 (in this case, κ is out of scope)
+C_κ (Deviation of κ from Reference Point)
+Estimate κ̂_t via window regression
+κref is composed of the reference set 𝒯ref (typically “periods where C_Y(t)=0 and A_κ(t)=1”)
+Determination: If |κ̂t − κref| < τ, then C_κ(t)=1
+$$
+\begin{equation} C_\kappa(t)\equiv 1\left[\left|\hat{\kappa}_t-\kappa_{\mathrm{ref}}\right|<\tau\right]. \end{equation}
+$$
+
+S_θ (Integrated Signature)
+Definition is fixed to include A_κ
+$$
+\begin{equation} S_\theta(t)\equiv 1\left[C_U(t)\wedge C_Y(t)\wedge A_\kappa(t)\wedge C_\kappa(t)\right]. \end{equation}
+$$
+
+IV.1.5 Regime Classification (R1–R4: Mechanical Mapping)
+This paper returns the classification labels R1–R4 as the final output of the diagnostic tree. The mapping rules are fixed as follows.
+R1 (Candidate Valid Range): C_Y (t)=0
+R2 (Growth Invalid/Alternative Channel Valid): C_Y(t)=1 and C_ALT(t)=1
+R3 (Growth Invalid/Alternative Channel Unclear/Weak): C_Y(t)=1 and C_ALT(t)=0
+R4 (Exogenous Shock Branch): When the exogenous shock indicator Z identifies the year as “separated from normal diagnosis”
+Examples of Z (highly implementable ones)
+Separate situations where policy shock identification or IRF interpretation breaks down—such as institutional restrictions during pandemics, supply disruptions due to war, or financial crises—by pre-declaring them. (In this paper's standard operation, 2020 is separated as R4.)
+IV.1.6 Pre-fixed Thresholds (Parameter Table for Estimators)
+To prevent estimators from arbitrarily adjusting thresholds, this paper presents key thresholds as a fixed table (initial values are set during implementation; sensitivity analysis is reported in Part V).
+Fixed hyperparameters (diagnostic module)
+Symbol Role
+W Rolling window length (quarters)
+H Cumulative IRF horizon (quarters)
+L Window length for wage-price regression (quarters)
+δ Tolerance for tight labor condition (percentage points)
+ε_Y Near-zero tolerance for growth IRF
+επ, εw Minimum variation thresholds for A_κ
+τ Tolerance band for C_κ
+(This table is to be filled in as an operational declaration. Even if values cannot be filled in, the IV framework remains valid as long as the specifications are fixed.)
+IV.2 Data Design (Data Architecture: Series Names, Sources, Transformations)
+This section fixes “which series to use, at what frequency, and how to transform them.” This allows you to delegate the work directly to the estimator (collaborator) even if you lack empirical capabilities.
+IV.2.1 Essential Series (Directly Linked to Diagnostic Tree)
+Real GDP (Quarterly, Seasonally Adjusted)
+Unemployment Rate U (Quarterly or Monthly, Quarterlyized)
+Natural Rate of Unemployment proxy (Annual or Quarterly)
+Price inflation rate π (CPI, quarterly)
+Wage inflation rate Δw (wage index, quarterly)
+Monetary policy shock series (for identification)
+Alternative channel series (stock prices, housing, external, corporate capital hoarding - implementable ones)
+IV.2.2 Third Pillar (Quality of Capital Renewal) Series
+Fixed capital consumption CFC
+Gross fixed capital formation GFCF
+(If possible) Net capital stock K (difference ΔK)
+Definitions (Follow Part III. Part IV deals only with measurement implementation.)
+$$
+\begin{equation} RAR_t \equiv \frac{CFC_t}{GFCF_t}. \end{equation}
+$$
+
+IV.2.3 Pillar 4 (Industrial Structure Rigidity) Series 
+(Minimal Implementation) 
+Entry and Exit Rates (Business Demography)
+Weakness of Redistribution (Proxy such as Industry Share Shifts)
+Sticky Concentration (If concentration indicators are available)
+Due to strong constraints on international comparability for Pillar IV, the standard implementation in this paper presents it as an “auxiliary for countries where data is available only,” explicitly showing missing values as such.
+IV.2.4 Data Appendix Template (for insertion into the paper)
+The following is the “series dictionary” to be inserted at the end of the main text or in an appendix. Estimators should format data according to this table.
+Table: Data appendix – series list and transformations
+Block Series Freq. Transform Notes
+Step1 Real GDP Q log level or growth for LP/VAR dependent variable
+Step3 Unemployment U M/Q level (%) quarterly average if monthly
+Step3 Natural rate proxy A/Q level (%) interpolate if annual
+Step3 CPI inflation π M/Q yoy or qoq annualized fixed definition across countries
+Step3 Wage growth Δw M/Q yoy wage index preferred
+Shock Monetary policy shock event / M / Q aggregated to Q identification source must be cited
+Step2 Asset price index D/M/Q log change or return cumulative IRF
+Step2 Housing price index M/Q log change cumulative IRF
+Step2 Net foreign flow Q ratio or level depends on availability
+Pillar3 CFC, GFCF A/Q ratio (RAR) national accounts preferred
+Pillar4 Entry / Exit, etc. A rates optional (availability-limited)
+IV.3 Implementation Procedure (A “delegable” procedure manual assuming no empirical verification)
+This section presents the procedure as a workflow chart so the estimator (collaborator) can proceed directly. You should attach this section to your “Research Collaboration Request”.
+IV.3.1 Input Data Formatting (Process 1)
+(1) Standardize all series to quarterly frequency.
+ (2) Unify daily/monthly series to quarterly averages (or end-of-period values) and fix the selection rule.
+ (3) Treat missing values as missing; do not arbitrarily impute (however, annual→quarterly interpolation for the natural rate of unemployment proxy is permitted; specify the interpolation method).
+IV.3.2 Estimation (Step 2: LP/VAR)
+(1) For each evaluation point t, extract the most recent W quarters as the estimation window.
+(2) Using the same shock series, estimate the cumulative IRF for Step 1 (Real GDP) and determine C_Y(t).
+(3) For Step 2 (Alternative Channel), estimate the cumulative IRF for each series within the same window and determine C_ALT(t).
+ 
+(4) For Step 3 (κ), determine Aκ(t) from π and Δw within the window, and estimate κ̂_t only when Aκ(t)=1.
+IV.3.3 Reference Point Construction (Process 3: κ_ref)
+(1) Construct the reference set 𝒯ref as the “period where C_Y(t)=0 and Aκ(t)=1”.
+(2) Fix κ_ref as the representative value (e.g., median) of κ̂ in the reference set.
+ (3) If the reference set is empty, report κ determination as out of scope for that country (Do not force substitution).
+IV.3.4 Output (Step 4: Automatic Generation of Tables and Diagnostic Cards)
+The estimator mechanically feeds the estimation results into the following table format to generate the final output (LaTeX table). Diagnostic cards (short statements) are placed in the main text, while detailed tables are moved to the appendix.
+IV.4 Output Format
+IV.4.1 Table 1 (Classification and Diagnostic Condition Truth Table: Core Text)
+Table: Regime classification and diagnostic condition truth table
+Period Regime C_Y C_ALT C_U A_κ C_κ S_θ Notes
+2015 
+2020 
+2025 
+IV.4.2 Table 2 (Step1: Growth IRF) 
+Table: Step1 evidence – cumulative response of real activity to monetary policy shocks
+Period IRF_Y_cum(H; t) s.e. Decision (C_Y) Spec (W, H, method)
+2015 
+2020 
+2025
+ 
+IV.4.3 Table 3 (Step 2: Alternative Channel IRF)
+Table: Step 2 evidence – alternative channels (cumulative IRFs)
+Period Asset price Housing Abroad flow Internal funds Other Decision (C_ALT)
+2015
+2020
+ 
+2025 
+IV.4.4 Table 4 (Step 3: θ Proximity Signature)
+Table: Step 3 evidence – proximity signature around the threshold
+Period U − U_natural Decision (C_U) A_κ κ̂ − κ_ref Decision (C_κ) S_θ
+2015 
+2020 
+2025
+ 
+IV.4.5 Table 5 (Pillar 3: Quality of Capital Renewal)
+Table: Pillar 3 – Capital Renewal Diagnostics
+Period RAR (CFC / GFCF) Net share (1 − RAR) Utilization pressure Renewal signal
+2015 
+2020 
+2025 
+IV.4.6 Table 6 (Pillar 4: Rigidity)
+Table: Pillar 4 – structural rigidity diagnostics (availability-limited)
+Period Entry + Exit Reallocation proxy Concentration stickiness Rigidity signal
+2015 
+2020 
+2025 
+IV.4.7 Decision trace (short log placed in main text)
+ (Applied identically each year. Estimators complete it by swapping results. )
+2015: Branching based on Step1 result (C_Y). Confirm Step2 result (C_ALT). Step3 (Sθ) explicitly states applicability of Aκ; if outside scope, report as such. Ultimately determine Regime.
+2020: Separated as exogenous shock branch (R4) (operational rule). However, auxiliary pillars (RAR, etc.) are included as structural information.
+2025: If annual data is not yet confirmed, use the latest quarterly data for a provisional estimate and note this accordingly.
+IV.5 Writing the Results Section (Diagnostic Card: Text Template to Paste into the Main Text)
+For each country × each year, always standardize using the following three paragraphs (do not write differently). This ensures “you won't get tired of writing.”
+Template (paste as-is, replace only text in brackets)
+The results for (Period) are as follows. In Step1 growth channel determination, the cumulative IRF was (near zero/non-zero), resulting in C_Y=(0/1).
+ 
+In Step 2's Alternative Channel, cumulative reactions were observed in (stock prices/housing/external/internal funds), resulting in C_ALT=(0/1).
+ In Step 3's Neighborhood Signature, C_U=(0/1) , Aκ=(0/1) (when Aκ=0, κ determination is reported as out of scope), resulting in Cκ=(0/1/N.A.) and Sθ=(0/1/N.A.). Therefore, the Regime is classified as (R1/R2/R3/R4).
+A. Observed Data Table for Empirical Analysis (Japan)
+A.1 Labor Market (C_U / A_κ assumptions, specifically U)
+Table A1: Japan – Unemployment rate (annual, %) (WDI)
+Year Unemployment rate (%)
+2015 3.38
+2020 2.79
+2025 NA
+Source: World Bank / WDI indicator SL.UEM.TOTL.ZS (Unemployment, total (% of total labor force) (modeled ILO estimate)).
+Notes: The latest year available in WDI is 2024 (since your template is fixed at 2025, we've uniformly set 2025 to NA here).
+A.2 Quality of Capital Renewal (Pillar 3: RAR)
+Your definition: RAR ≡ CFC / GFCF
+CFC: NY.ADJ.DKAP.CD (Adjusted savings: consumption of fixed capital, current US$)
+GFCF: NE.GDI.FTOT.CD (Gross fixed capital formation, current US$)
+Table A2: Japan – Renewal Absorption Ratio (RAR = CFC/GFCF) (WDI)
+Year CFC (current US$) GFCF (current US$) RAR = CFC/GFCF Net share = 1 − RAR
+2015 1.059e+12 1.110e+12 0.954 0.046
+2020 1.270e+12 1.287e+12 0.987 0.013
+2025 NA NA NA NA
+Source: World Bank / WDI Indicators NY.ADJ.DKAP.CD, NE.GDI.FTOT.CD.
+Notes: For countries where CFC data (NY.ADJ.DKAP.CD) is not available for the latest year, it is safe to set 2025 as NA when years cannot be aligned.
+IV.4 Output Format (Japan: Template Input Complete)
+IV.4.1 Table 1 (Classification and Condition Truth Table: Core Text)
+Period Regime C_Y C_ALT C_U A_κ C_κ S_θ Notes
+2015 N.A. N.A. N.A. N.A. N.A. N.A. N.A. Refer to Table A1–A2 for observed inputs.
+2020 R4 N.A. N.A. N.A. N.A. N.A. N.A. Exogenous shock branch (operational rules).
+2025 N.A. N.A. N.A. N.A. N.A. N.A. N.A. Possibility of unconfirmed annual data → treated as provisional.
+IV.4.2 Table 2 (Step1: Growth IRF)
+Period IRF_Y_cum(H; t) s.e. Decision (C_Y) Spec (W, H, method)
+2015 N.A. N.A. N.A. TBD
+2020 N.A. N.A. N.A. TBD
+2025 N.A. N.A. N.A. TBD
+IV.4.3 Table 3 (Step 2: Alternative Channel IRF)
+Period Asset price Housing Abroad flow Internal funds Other Decision (C_ALT)
+2015 N.A. N.A. N.A. N.A. N.A. N.A.
+2020 N.A. N.A. N.A. N.A. N.A. N.A.
+2025 N.A. N.A. N.A. N.A. N.A. N.A.
+IV.4.4 Table 4 (Step 3: θ-Nearby Signature)
+Period U − U_natural Decision (C_U) A_κ κ̂ − κ_ref Decision (C_κ) S_θ
+2015 N.A. N.A. N.A. N.A. N.A. N.A.
+2020 N.A. N.A. N.A. N.A. N.A. N.A.
+2025 N.A. N.A. N.A. N.A. N.A. N.A.
+IV.4.5 Table 5 (Column 3: Quality of Capital Renewal)
+Period RAR (CFC / GFCF) Net share (1 − RAR) Utilization pressure Renewal signal
+2015 0.954 0.046 N.A. N.A.
+2020 0.987 0.013 N.A. N.A.
+2025 NA NA N.A. N.A.
+IV.4.6 Table 6 (Pillar 4: Rigidity)
+Period Entry + Exit Reallocation proxy Concentration stickiness Rigidity signal
+2015 N.A. N.A. N.A. N.A.
+2020 N.A. N.A. N.A. N.A.
+2025 N.A. N.A. N.A. N.A.
+IV.4.7 Decision trace (Short log placed in main text: Japan, provisional version)
+2015: Step1 (C_Y) not estimated. Step2 (C_ALT) not estimated. Step3 (S_θ) not estimated. Observed input: Confirmed RAR=0.954 (strong update absorption) for the third column.
+2020: Separated as exogenous shock branch (R4). Observed input: Third pillar confirmed RAR=0.987 (stronger update absorption).
+2025: NA as annual observed inputs may be unreported in WDI format. Estimator fills provisionally by estimating from quarterly series in Steps 1–2.
+Appendix: Estimator's note for reproducing the same table (copy-paste ready)
+World Bank (WDI) CSV download:
+- Unemployment rate (%): SL.UEM.TOTL.ZS
+https://api.worldbank.org/v2/en/indicator/SL.UEM.TOTL.ZS?downloadformat=csv
+
+- GFCF (current US$): NE.GDI.FTOT.CD
+https://api.worldbank.org/v2/en/indicator/NE.GDI.FTOT.CD?downloadformat=csv
+
+- CFC (current US$): NY.ADJ.DKAP.CD
+https://api.worldbank.org/v2/en/indicator/NY.ADJ.DKAP.CD?downloadformat=csv
+A. Observed Data (United States) — Template Input Section
+A.2 (Denominator Side of Pillar 3): GFCF (Annual Total, US$)
+Annual values were created as the sum of all four quarters for each year from FRED's “Gross Fixed Capital Formation (Quarterly, US dollars)” (consistent with the “quarterly unification” rule in Step 1). FRED
+2015: GFCF Annual Total = 3.7915983e+12 (US$)
+2020: GFCF Annual Total = 4.4183e+12 (US$)
+2025: NA (Outside this series' coverage / Not obtained)
+Note: Since RAR requires CFC (Consumption of Fixed Capital), once CFC is obtained using the same definition, RAR=CFC/GFCF can be mechanically filled in (see “Filling Method” below).
+IV.4 Output Format (United States: 2015 / 2020 / 2025)
+IV.4.1 Table 1 (Classification and Conditional Truth Table: Core Text)
+Period Regime C_Y C_ALT C_U A_κ C_κ S_θ Notes
+2015 R? N.A. N.A. N.A. N.A. N.A. N.A. IRF/κ not estimated. Annual labor/price data not input.
+2020 R4 (operational branch) N.A. N.A. N.A. N.A. N.A.
+ 
+N.A. Separated as exogenous shock year (your operational rule).
+2025 R? N.A. N.A. N.A. N.A. N.A. N.A. Provisional due to unreported annual data and estimation not performed.
+IV.4.2 Table 2 (Step1: Growth IRF)
+Period IRF_Y_cum(H; t) s.e. Decision (C_Y) Spec (W, H, method)
+2015 N.A. N.A. N.A. (Estimator input)
+2020 N.A. N.A. N.A. (Estimator input)
+2025 N.A. N.A. N.A. (Estimator input)
+IV.4.3 Table 3 (Step 2: Alternative Channel IRF)
+Period Asset price Housing Abroad flow Internal funds Other Decision (C_ALT)
+2015 N.A. N.A. N.A. N.A. N.A. N.A.
+2020 N.A. N.A. N.A. N.A. N.A. N.A.
+2025 N.A. N.A. N.A. N.A. N.A. N.A.
+IV.4.4 Table 4 (Step 3: θ-Proximity Signature)
+Period U − U_natural Decision (C_U) A_κ κ̂ − κ_ref Decision (C_κ) S_θ
+2015 N.A. N.A. N.A. N.A. N.A. N.A.
+2020 N.A. N.A. N.A. N.A. N.A. N.A.
+2025 N.A. N.A. N.A. N.A. N.A. N.A.
+IV.4.5 Table 5 (Column 3: Quality of Capital Renewal)
+Period RAR (CFC / GFCF) Net share (1 − RAR) Utilization pressure Renewal signal
+2015 N.A. (CFC not entered) N.A. N.A. N.A.
+2020 N.A. (CFC not entered) N.A. N.A. N.A.
+2025 N.A. N.A. N.A. N.A.
+Reference (Observed facts for denominator): Annual GFCF totals (2015/2020) are finalized as per A.2 above. FRED
+IV.4.6 Table 6 (Column 4: Rigidity)
+Period Entry + Exit Reallocation proxy Concentration stickiness Rigidity signal
+2015 N.A. N.A. N.A. N.A.
+2020 N.A. N.A. N.A. N.A.
+2025 N.A. N.A. N.A. N.A.
+IV.4.7 Decision trace (short log placed in main text)
+2015: Step1 (C_Y) not estimated → Step2 (C_ALT) not estimated → Step3 (C_U, A_κ, κ̂) not estimated. Therefore, Regime is held (R?).
+2020: Separated as exogenous shock branch (R4) (operational rule). However, auxiliary pillars (RAR, etc.) are included as structural information (though RAR is pending due to CFC not entered).
+2025: If annual data is not yet confirmed, note that a provisional estimate is made based on the latest quarterly data (implemented by the estimator).
+IV.5 Diagnostic Card (for main text insertion: U.S.)
+(2015)
+ 
+The 2015 results are as follows. In Step 1 growth channel determination, the cumulative IRF was (N.A.), resulting in C_Y=N.A. 
+ In Step 2 alternative channels, cumulative response was observed for (N.A.), resulting in C_ALT=N.A.
+ In Step 3 neighborhood signature, C_U=N.A., Aκ=N.A. (Aκ=N.A., thus κ determination reported as out of scope), resulting in Cκ=N.A. and Sθ=N.A. Therefore, the Regime is classified as R?.
+(2020)
+The 2020 results are as follows. In the Step1 growth channel determination, the cumulative IRF was (N.A.), and C_Y was judged as N.A.
+In the Step2 alternative channel, cumulative reaction was observed at (N.A.), and C_ALT was judged as N.A.
+ In Step 3's neighborhood signature, C_U=N.A., Aκ=N.A. (reported as κ determination out of scope due to Aκ=N.A.), and Cκ=N.A. and Sθ=N.A. were obtained. Therefore, the Regime is classified as R4 (exogenous shock branch).
+(2025)
+The results for 2025 are as follows. In the Step1 growth channel determination, the cumulative IRF was (N.A.), and C_Y=N.A. was determined.
+ In the Step2 alternative channel, cumulative response was observed at (N.A.), and C_ALT=N.A. was determined. , and C_ALT=N.A. was determined.
+ In Step 3's neighborhood signature, C_U=N.A., Aκ=N.A. (reported as κ determination out of scope due to Aκ=N.A.), Cκ=N.A., and Sθ=N.A. were observed. Therefore, the Regime is classified as R?.
+A. “Observed Data” Table for Empirical Analysis (Germany)
+A.1 Labor Market and Prices (Assumptions for C_U / A_κ)
+World Bank annual series for 2015 and 2020 are confirmed; 2025 is NA as the series is not yet available. api.worldbank.org+1
+ 
+(However, for 2025, the latest monthly values are also included as supplementary information)
+Table A1: Germany – Unemployment rate and CPI inflation (annual, %)
+Year Unemployment rate (%) CPI inflation (%)
+2015 4.612 0.514
+2020 3.881 0.145
+2025 NA NA
+Source (annual): World Bank Data API
+Unemployment rate: SL.UEM.TOTL.ZS api.worldbank.org
+CPI inflation: FP.CPI.TOTL.ZG api.worldbank.org
+(Supplementary: 2025 “observed value within the same year”)
+Unemployment rate (aged 15+, monthly, 2025-10): 3.5% (OECD series recorded in FRED)FRED
+HICP inflation (2025-10, year-on-year): 2.3% (Eurostat published) European Commission ※However, since Table A1 above is uniformly based on World Bank CPI (annual), 2025 is left as NA (consistency prioritized).
+A.2 Quality of Capital Renewal (Pillar 3: RAR)
+Your definition RAR ≡ CFC / GFCF was calculated using World Bank indicators.api.worldbank.org+1
+CFC: Adjusted savings: consumption of fixed capital (current US$) (NY.ADJ.DKAP.CD)api.worldbank.org
+GFCF: Gross fixed capital formation (current US$) (NE.GDI.FTOT.CD) api.worldbank.org
+Table A2: Germany – Renewal Absorption Ratio (RAR = CFC/GFCF)
+Year CFC (current US$ bn) GFCF (current US$ bn) RAR = CFC/GFCF Net share = 1 − RAR
+2015 514.217 676.380 0.760 0.240
+2020 629.900 841.200 0.749 0.251
+2025 NA NA NA NA
+Source: World Bank Data API (above indicators) api.worldbank.org+1
+B. “Germany's Diagnosis” Along the Diagnostic Tree (2015, 2020, 2025)
+Here, observed inputs (U, prices, RAR) are set to fixed values, and IRF/κ-dependent determinations (C_Y, C_ALT, Aκ, Cκ, S_θ) remain N.A. (estimators can be substituted directly).
+IV.4 Output Format (Germany: Input Complete)
+IV.4.1 Table 1 (Classification and Conditional Truth Table: Core Text)
+Period Regime C_Y C_ALT C_U A_κ C_κ S_θ Notes
+2015 R? N.A. N.A. N.A. N.A. N.A. N.A. U=4.612, CPI=0.514 (annual)
+2020 R4 N.A. N.A. N.A. N.A. N.A. N.A. COVID shock year (branch rule)
+2025 R? N.A. N.A. N.A. N.A. N.A. N.A. 2025 annual series not yet in WB; see monthly Oct values
+2015/2020 U and CPI (annual) from World Bank annual api.worldbank.org+1
+2025 supplementary data (monthly 2025-10 unemployment rate/inflation) from FRED / Eurostat FRED+1
+IV.4.2 Table 2 (Step1: Growth IRF)
+Period IRF_Y_cum(H; t) s.e. Decision (C_Y) Spec (W, H, method)
+2015 N.A. N.A. N.A. (fill)
+2020 N.A. N.A. N.A. R4 branch
+2025 N.A. N.A. N.A. (fill)
+IV.4.3 Table 3 (Step2: Alternative Channel IRF)
+Period Asset price Housing Abroad flow Internal funds Other Decision (C_ALT)
+2015 N.A. N.A. N.A. N.A. N.A. N.A.
+2020 N.A. N.A. N.A. N.A. N.A. N.A.
+2025 N.A. N.A. N.A. N.A. N.A. N.A.
+IV.4.4 Table 4 (Step 3: θ-Neighborhood Signature)
+Period U − U_natural Decision (C_U) A_κ κ̂ − κ_ref Decision
+ 
+(C_κ) S_θ
+2015 N.A. N.A. N.A. N.A. N.A. N.A.
+2020 N.A. N.A. N.A. N.A. N.A. N.A.
+2025 N.A. N.A. N.A. N.A. N.A. N.A.
+IV.4.5 Table 5 (Pillar 3: Quality of Capital Renewal)
+Period RAR (CFC / GFCF) Net share (1 − RAR) Utilization pressure Renewal signal
+2015 0.760 0.240 N.A. N.A.
+2020 0.749 0.251 N.A. N.A.
+2025 NA NA N.A. N.A.
+(RAR Basis: World Bank CFC/GFCF) api.worldbank.org+1
+IV.4.6 Table 6 (Pillar 4: Rigidity)
+Period Entry + Exit Reallocation proxy Concentration stickiness Rigidity signal
+2015 N.A. N.A. N.A. N.A.
+2020 N.A. N.A. N.A. N.A.
+2025 N.A. N.A. N.A. N.A.
+IV.4.7 Decision trace (Short log in main text: Fixed for replacement)
+2015: Estimate Step1 (C_Y) → Step2 (C_ALT) → Step3 (A_κ and κ̂) → Determine regime.
+2020: Separated as exogenous shock branch (R4) (operational rule). However, auxiliary pillars (RAR, etc.) are included as structural information.
+2025: If annual data is not yet reported, use provisional estimates based on the latest quarterly data and note this accordingly.
+C. For Reproduction (Acquisition Method: Footnote-compatible format)
+World Bank API (JSON):
+- Unemployment rate (SL.UEM.TOTL.ZS):
+https://api.worldbank.org/v2/country/DEU/indicator/SL.UEM.TOTL.ZS?format=json
+- CPI inflation (FP. CPI.TOTL.ZG):
+  https://api.worldbank.org/v2/country/DEU/indicator/FP.CPI.TOTL.ZG?format=json
+- CFC (NY.ADJ.DKAP.CD):
+  https://api.worldbank.org/v2/country/DEU/indicator/NY.ADJ.DKAP.CD?format=json
+- GFCF (NE.GDI.FTOT.CD):
+  https://api.worldbank.org/v2/country/DEU/indicator/NE. GDI.FTOT.CD?format=json
+A. “Observation Data” Tables for Empirical Analysis (UK)
+A.1 Labor Market, Prices, Wages (Input Assumptions for C_U / A_κ)
+U (Unemployment Rate): ONS Time Series MGSX (Unemployment rate) Unknown URL
+π (Inflation): 2015/2020 from World Bank (FP.CPI.TOTL.ZG), 2025 from ONS (quarterly) api.worldbank.org+1
+Δw (Wage growth): ONS time series KAC3 (AWE regular pay growth) ons.gov.uk
+Table A1: UK – Observed inputs for the diagnostic module (mixed-frequency, %)
+Period Unemployment rate U (%) Inflation π (%) Wage growth Δw (%) Notes
+2015 5.4 0.37 1.9 π is annual (WB), Δw is monthly representative value (KAC3: 2015 DEC)
+2020 4.6 0.99 4.6 π is annual (WB), Δw is monthly representative value (KAC3: 2020 DEC)
+2025 5.1 3.8 4.7 U is monthly representative value (2025 SEP), π is quarterly (2025 Q3), Δw is monthly (2025 OCT)
+Unemployment rate (MGSX): 2015 (annual average) 5.4, 2020 (annual average) 4.6, September 2025 5.1 Unknown URL
+CPI Inflation: 2015 0.368..., 2020 0.989... (World Bank annual) api.worldbank.org
+CPI (2025 Q3): 3.8 (ONS quarterly column) ons.gov.uk
+Wages (KAC3): December 2015 1.9, December 2020 4.6, October 2025 4.7 ons.gov.uk
+Note: Since Aκ(t) in your definition requires “within-window variation (e.g., std)”, the table above is “input observations”, and the validity of Aκ is delegated to Process 2 (after window extraction).
+A.2 Input for Pillar 3 (RAR) (Currently Delegated: Only formula and series ID fixed)
+RAR is defined as RAR = CFC / GFCF per your definition. In the UK, the same definition is possible using World Bank indicators.
+CFC: NY.ADJ.DKAP.CD (equivalent to consumption of fixed capital)
+GFCF: NE.GDI.FTOT.CD
+However, since missing values may occur by year (especially recent years), it is safer to have the estimator obtain and fill in the same series.
+1) Diagnostic Card (UK: 2015 / 2020 / 2025)
+UK, t=2015 (for attachment)
+Regime classification: R? (Pending: C_Y not estimated)
+Step1 (Growth): C_Y(2015)=N/A (IRF not estimated)
+Step2 (Substitution Channel): C_ALT(2015)=N/A (IRF not estimated)
+Step3 (Auxiliary Input): U=5.4, π=0.37, Δw=1.9 (A_κ delegated to window-based determination) Unknown URL+2api.worldbank.org+2
+UK, t=2020 (for attachment)
+Regime classification: R4 (Recommended separation as exogenous shock branch)
+Step1 (Growth): C_Y(2020)=N/A (IRF not estimated)
+Step2 (Alternative Channel): C_ALT(2020)=N/A (IRF not estimated)
+Step3 (Supplementary Input): U=4.6, π=0.99, Δw=4.6 (A_κ delegated to window-based determination) Unknown URL+2api.worldbank.org+2
+UK, t=2025 (For attachment: Provisional based on latest observations)
+Regime classification: R? (Pending: C_Y not estimated)
+Step1 (Growth): C_Y(2025)=N/A (IRF not estimated)
+Step2 (Alternative Channel): C_ALT(2025)=N/A (IRF not estimated)
+Step3 (Auxiliary Input): U=5.1 (2025 SEP), π=3.8 (2025 Q3), Δw=4.7 (2025 OCT) Unknown URL+2ons.gov.uk+2
+2) IV.4.1 Table 1 (Classification and Diagnostic Condition Truth Table: Core Text)
+(To match your template, unestimated values are fixed as N/A)
+Table: Regime classification and diagnostic condition truth table (UK)
+Period Regime C_Y C_ALT C_U A_κ C_κ S_θ Notes
+2015 R? N/A N/A N/A N/A N/A N/A Inputs: U=5.4, π=0.37, Δw=1.9
+2020 R4 N/A N/A N/A N/A N/A N/A Exogenous shock branch; inputs recorded
+2025 R? N/A N/A N/A N/A N/A N/A Inputs: U=5.1 (Sep), π=3.8 (Q3), Δw=4.7 (Oct)
+3) IV.4.2–IV.4.4 (Step1/Step2/Step3: Estimation cells are delegated)
+Table 2 (Step1: Growth IRF)
+Table: Step1 evidence – cumulative response of real activity to monetary policy shocks (UK)
+Period IRF_Y_cum(H; t) s.e. Decision (C_Y) Spec (W, H, method)
+2015
+2020
+2025
+ 
+Table 3 (Step2: Alternative Channels IRF)
+Table: Step2 evidence – alternative channels (cumulative IRFs) (UK)
+Period Asset price Housing Abroad flow Internal funds Other Decision (C_ALT)
+2015 
+2020 
+2025 
+Table 4 (Step3: θ Proximity Signature) — Observed inputs are embedded
+Table: Step3 evidence – proximity signature around the threshold (UK)
+Period U − U_natural Decision (C_U) A_κ κ̂ − κ_ref Decision (C_κ) S_θ
+2015 
+2020 
+2025 
+Observed inputs (UK)
+2015: U=5.4, π=0.37, Δw=1.9
+2020: U=4.6, π=0.99, Δw=4.6
+2025: U=5.1 (Sep), π=3.8 (Q3), Δw=4.7 (Oct)
+IV.4.5 Table 5 (Pillar 3: Quality of Capital Renewal) — RAR is the assigned cell
+Table: Pillar 3 – capital renewal diagnostics (UK)
+Period RAR (CFC / GFCF) Net share (1 − RAR) Utilization pressure Renewal signal
+2015 
+2020
+ 
+2025 
+RAR definition and series IDs (World Bank)
+CFC: NY.ADJ.DKAP.CD 
+GFCF: NE.GDI.FTOT.CD
+IV.4.6 Table 6 (Pillar 4: Structural Rigidity) — Availability-Limited
+Table: Pillar 4 – Structural Rigidity Diagnostics (UK)
+Period Entry + Exit Reallocation proxy Concentration stickiness Rigidity signal
+2015 
+2020 
+2025 
+Notation & Operational Notes
+Entry + Exit: Corporate Metabolism (Entry Rate + Exit Rate)
+Reallocation proxy: Degree of Stagnation in Industry Share Reallocation (Proxy Indicator)
+Concentration stickiness: Stickiness of Oligopoly
+Rigidity signal: Entered as an ordinal classification such as Low / Medium / High
+IV.4.7 Decision trace (Short log placed in main text: UK)
+% Decision trace (UK)
+2015: Step1 requires IRF estimation to determine C_Y. Step2 requires alternative-channel IRFs to determine C_ALT.
+Step3 inputs are recorded (U, pi, dw). A_kappa, kappa_hat, and S_theta are evaluated only after windowing (W quarters).
+2020: Classified as R4 (exogenous-shock branch) by the operational rule. Still record Step3 inputs; do not infer structural regime from 2020 alone.
+2025: Use latest available readings for U, pi, and dw as inputs. Final regime classification requires Step1/Step2 IRFs and (if applicable) kappa_ref construction.
+1) Diagnostic Cards (China: 2015 / 2020 / 2025)
+Diagnostic Card (China, t=2015)
+Regime classification (Conclusion): Provisional R? (Pending due to IRF not estimated)
+θ-proximity signature: S_θ(2015)=N/A (κ system not estimated)
+Diagnostic Summary (3 lines)
+Step1 (Growth): C_Y(2015)=N/A (IRF not estimated)
+Step2 (Escape Route): C_ALT(2015)=N/A (IRF not estimated)
+Step3 (Support/Observations): Unemployment Rate (Model-based) 4.65%, CPI Inflation (Annual Rate) 1.44% api.worldbank.org
+Confidence: Low (C_Y/C_ALT not estimated)
+Diagnostic Card (China, t=2020)
+Regime classification (Conclusion): Provisional R4 (Exogenous shock branch: Separation recommended as COVID)
+θ-neighborhood signature: S_θ(2020)=N/A (κ system not estimated)
+Diagnostic Summary (3 lines)
+Step1 (Growth): C_Y(2020)=N/A (IRF not estimated)
+Step2 (Escape Route): C_ALT(2020)=N/A (IRF not estimated)
+Step3 (Auxiliary/Observations): Unemployment Rate (Model-based) 5.00%, CPI Inflation (Annual Rate) 2.42% api.worldbank.org
+Confidence: Medium (R4 separation is operationally reasonable, but Z-condition declaration is required)
+Diagnostic Card (China, t=2025)
+Regime classification (Conclusion): Provisional R? (Pending due to unestimated IRF)
+θ-neighborhood signature: S_θ(2025)=N/A (κ system not estimated)
+Diagnostic Summary (3 lines)
+Step1 (Growth): C_Y(2025)=N/A (IRF not estimated)
+Step2 (Escape Route): C_ALT(2025)=N/A (IRF not estimated)
+Step3 (Auxiliary/Observations): Urban Survey Unemployment Rate (2025 1st half average)5.2% (reported as NBS value) , CPI (October 2025 YoY) −0.2% Global Times +1
+Confidence: Low (based on “latest published data,” not annual final figures)
+2) Table 1 (Classification and Diagnostic Condition Truth Table: Core Text) — China
+Table: China – regime classification and diagnostic condition truth table
+Period Regime C_Y C_ALT C_U A_κ C_κ S_θ Notes
+2015 R? N/A N/A N/A N/A N/A N/A Inputs: U=4.65%, CPI=1.44% (annual)
+2020 R4* N/A N/A N/A N/A N/A N/A COVID-year separation recommended; U=5.00%, CPI=2.42%
+2025 R? N/A N/A N/A N/A N/A N/A Inputs: U=5.2% (H1 avg, reported); CPI y/y (Oct) = −0.2%
+Unemployment rate・CPI (annual rate) for 2015/2020 obtained from World Bank API (CHN) series api.worldbank.org
+Urban Survey Unemployment Rate (H1 avg 5.2%) for 2025 is based on reported NBS values Global Times, CPI (Oct YoY −0.2%) is NBS published
+Table 2–4 (Step1/Step2/S_θ: left as template as estimation is required in this response)
+Table: Step1 evidence – cumulative response of real activity to monetary policy shocks (China)
+Period IRF_Y_cum(H; t) s.e. Decision (C_Y) Spec (W, H, method)
+2015 
+2020 
+2025 
+Table: Step2 evidence – alternative channels (cumulative IRFs) (China)
+Period Asset price Housing Abroad flow Internal funds Other Decision (C_ALT)
+2015 
+2020 
+2025 
+Table: Step3 evidence – proximity signature around the threshold (China)
+Period U − U_natural Decision (C_U) A_κ κ̂ − κ_ref Decision (C_κ) S_θ
+2015
+ 
+2020
+2025
+4) Table 5 (Pillar 3: Quality of Capital Renewal) — China (Fill RAR with actual data for 2015/2020)
+Here, we calculate and fill in RAR = CFC/GFCF using the World Bank's CFC (Consumption of Fixed Capital) and GFCF (Gross Fixed Capital Formation).
+GFCF (NE.GDI.FTOT.CD): 2015 = 5.452e12, 2020 = 6.959e12 api.worldbank.org
+CFC (NY.ADJ.DKAP.CD): 2015 = 1.594e12, 2020 = 2.685e12
+Table: Pillar 3 – Capital Renewal Diagnostics (China)
+Period RAR (CFC / GFCF) Net share (1 − RAR) Utilization pressure Renewal signal
+2015 0.292 0.708 
+2020 0.386 0.614 
+2025
+ 
+※For 2025, it is safer to leave the data missing (as annual final reports from sources like the World Bank are often incomplete) and have the estimator obtain the same series to fill in the gap.
+Table 6 (Pillar 4: Rigidity) — China (remaining availability-limited)
+Table: Pillar 4 – structural rigidity diagnostics (China)
+Period Entry + Exit Reallocation proxy Concentration stickiness Rigidity signal
+2015 
+2020 
+2025
+ 
+% Decision trace (China)
+2015: $C_Y$ and $C{\mathrm{ALT}}$ require LP/VAR-based cumulative IRFs and are not evaluated here; observables report $U$ and CPI. $\kappa$-based proximity test is not executed without $\hat{\kappa}$ and $\kappa{\mathrm{ref}}$.
+2020: Treated as an exogenous-shock year (COVID) and recommended to separate as R4* for regime inference; IRF-based conditions remain to be estimated.
+2025: Latest official releases are used in place of full-year final values (urban surveyed unemployment H1 average; CPI y/y for Oct); IRF-based classification and $\kappa_{\mathrm{ref}}$ construction remain pending.
+Table A1: Data sources & transformations (China, minimal)
+Block Series Provider Freq Notes
+U_t Unemployment rate (modeled ILO estimate) World Bank API (CHN, SL.UEM.TOTL.ZS) A 2015 / 2020 used here
+π_t CPI inflation (annual %) World Bank API (CHN, FP.CPI.TOTL.ZG) A 2015 / 2020 used here
+π_t (latest) CPI y/y (Oct 2025) NBS (China) M used as 2025 “latest” proxy
+U_t (latest) Urban surveyed unemployment (H1 2025 avg) NBS (reported) H1 used as 2025 “latest” proxy
+CFC Consumption of fixed capital (current US$) World Bank API (CHN, NY.ADJ.DKAP.CD) A for RAR
+GFCF Gross fixed capital formation (current US$) World Bank API (CHN, NE.GDI.FTOT.CD) A for RAR
